@@ -22,15 +22,22 @@ parser.add_argument('-i', '--input')
 parser.add_argument('-r', '--resize')
 parser.add_argument('-c', '--crop')
 args = parser.parse_args()
-print(args)
+#print(args.crop)
 
 image = cv2.imread(args.input)
  
-print(image.shape)
+if args.crop != None:
+	values = args.crop.split(':')
+	image = crop(image, int(values[0]), int(values[1]))
 
-cv2.imshow("Original Image", image)
-image = crop(image, 375, 375)
-cv2.imshow("Cropped Image", image)
-image = resize(image, 500)
-cv2.imshow("Resized Image", image)
+if args.resize != None:
+	image = resize(image, int(args.resize))
+
+#print(image.shape)
+
+cv2.imshow("Image", image)
+#image = crop(image, 375, 375)
+#cv2.imshow("Cropped Image", image)
+#image = resize(image, 500)
+#cv2.imshow("Resized Image", image)
 cv2.waitKey(0)
