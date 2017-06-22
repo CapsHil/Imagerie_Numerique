@@ -20,17 +20,6 @@ def resize(image, height):
     return resized_image
 
 
-def gray(image, width, height):
-    img_gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-    img_blur = cv2.GaussianBlur(img_gray, (21, 21), 0, 0)
-    img_blend = cv2.divide(img_gray, img_blur, scale=256)
-
-    canvas = cv2.imread('background.jpg', cv2.CV_8UC1)
-    canvas = cv2.resize(canvas, (height, width))
-    img_blend = cv2.multiply(img_blend, canvas, scale=1./256)
-    return cv2.cvtColor(img_blend, cv2.COLOR_GRAY2RGB)
-
-
 parser = argparse.ArgumentParser(description='Crop or resize image')
 parser.add_argument('-i', '--input')
 parser.add_argument('-o', '--output')
@@ -53,7 +42,7 @@ if args.output != None:
 
 # print(image.shape)
 
-cv2.imshow("Image", gray(image, image.shape[0], image.shape[1]))
+cv2.imshow("Image", image)
 # image = crop(image, 375, 375)
 # cv2.imshow("Cropped Image", image)
 # image = resize(image, 500)
