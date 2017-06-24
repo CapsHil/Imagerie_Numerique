@@ -1,0 +1,126 @@
+<html>
+<body>
+<div id="uploadBox">
+    <span id='uploadArea'>
+        <label for="fileBox">Choisir un fichier : </label><input type="file" id="fileBox"><br><br>
+
+        <label for="y">Hauteur : </label><input type="number" id="y"><br>
+        <label for="x">Largeur : </label><input type="number" id="x"><br><br>
+
+        <label for="pencil">Pencil : </label><input type="checkbox" id="pencil"><br>
+        <label for="cartoon">Cartoon : </label><input type="checkbox" id="cartoon"><br>
+        <label for="darker">Darker : </label><input type="checkbox" id="darker"><br>
+        <label for="sepia">Sepia : </label><input type="checkbox" id="sepia"><br>
+        <label for="gray">Gray : </label><input type="checkbox" id="gray"><br>
+        <label for="thermic">Thermic : </label><input type="checkbox" id="thermic"><br><br>
+
+        <button type='button' id='uploadButton' class='Button'>Generer l'image</button>
+    </span>
+</div>
+</body>
+</html>
+
+<script src="http://localhost:4200/socket.io/socket.io.js"></script>
+
+<script type="text/javascript">
+    window.addEventListener("load", ready);
+
+    function ready() {
+        if (window.File && window.FileReader) { //These are the relevant HTML5 objects that we are going to use
+            document.getElementById('uploadButton').addEventListener('click', startUpload);
+            document.getElementById('fileBox').addEventListener('change', fileChosen);
+        }
+        else {
+            document.getElementById('uploadArea').innerHTML = "Your browser doesn't support the file API please update your browser";
+        }
+    }
+
+    var selectedFile;
+    function fileChosen(evnt) {
+        selectedFile = evnt.target.files[0];
+    }
+
+    var socket = io.connect('http://localhost:4200');
+    var FReader;
+    var token;
+
+    var x;
+    var y;
+    var pencil;
+    var cartoon;
+    var darker;
+    var sepia;
+    var gray;
+    var thermic;
+
+    function startUpload() {
+        if (document.getElementById('fileBox').value !== "") {
+
+            x = document.getElementById('x').value;
+            y = document.getElementById('y').value;
+            pencil = document.getElementById('pencil').checked;
+            cartoon = document.getElementById('cartoon').checked;
+            darker = document.getElementById('darker').checked;
+            sepia = document.getElementById('sepia').checked;
+            gray = document.getElementById('gray').checked;
+            thermic = document.getElementById('thermic').checked;
+
+            FReader = new FileReader();
+            var Content = '</div><span id="percent">0%</span>';
+            Content += "<span id='uploaded'> - <span id='MB'>0</span>/" + Math.round(selectedFile.size / 1048576) + "MB</span>";
+            document.getElementById('uploadArea').innerHTML = Content;
+
+            FReader.onload = function (evnt) {
+                socket.emit('Upload.Data', {token: token, data: evnt.target.result});
+            };
+            socket.emit('Upload.Start', {'size': selectedFile.size});
+
+            console.log('ok');
+        }
+        else {
+            alert("Please Select A File");
+        }
+    }
+
+    socket.on('Upload.RequestData', function (data) {
+        token = data['token'];
+        updateBar(data['cursor'] / selectedFile.size * 100);
+
+        var newFile;
+
+        newFile = selectedFile.slice(data['cursor'], data['cursor'] + data['blockSize']);
+        FReader.readAsBinaryString(newFile);
+    });
+
+    socket.on('Upload.Done', function (data) {
+        token = data['token'];
+        var fileToken = data['fileToken'];
+
+        updateBar(100);
+
+        socket.emit('Img.Generate.Start', {
+            fileToken: data['fileToken'],
+            x: x,
+            y: y,
+            pencil: pencil,
+            cartoon: cartoon,
+            darker: darker,
+            sepia: sepia,
+            gray: gray,
+            thermic: thermic
+        });
+    });
+
+    socket.on('Img.Generate.Done', function (data) {
+        var Content = '<br><a href="'+ data.filePath+'">Télécharger l\'image générée</a>';
+        document.getElementById('uploadArea').innerHTML += Content;
+    });
+
+    function updateBar(percent) {
+        document.getElementById('percent').innerHTML = (Math.round(percent * 100) / 100) + '%';
+        var mbDone = Math.round(((percent / 100.0) * selectedFile.size) / 1048576);
+        document.getElementById('MB').innerHTML = mbDone;
+    }
+
+
+</script>
