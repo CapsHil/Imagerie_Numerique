@@ -4,6 +4,6 @@ build/
 
 node_modules
 temp/*
-!temp
+!temp/
 public/out/*
-!public/out
+!public/out/

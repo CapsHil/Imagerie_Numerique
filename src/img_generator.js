@@ -25,19 +25,26 @@ module.exports = function (client) {
                 if (data.thermic)
                     params += ' --thermic';
 
-                childprocess.exec('opencv/dist/filters' + ' -i temp/' + data.fileToken + ' -o public/out/' + data.fileToken + '.jpg' + params, function (err, stdout, stderr) {
+                childprocess.exec('opencv/dist/filters' + ' -i temp/' + data.fileToken + ' -o temp/' + data.fileToken + '_temp.jpg' + params, function (err, stdout, stderr) {
                     if (err)
                         throw err;
 
-                    // childprocess.exec('opencv/dist/resizing' + ' -i public/out/' + data.fileToken + ' -o public/out/' + data.fileToken + '.jpg' + ..., function (err, stdout, stderr) {
-                    //     if (err)
-                    //         throw err;
+                    var resizeParams = '';
+
+                    if (data.x && data.y && isNumeric(data.x) && isNumeric(data.y))
+                        resizeParams += ' --crop=' + data.x + ':' + data.y;
+
+                    if (data.resize && isNumeric(data.resize))
+                        resizeParams += ' --resize=' + data.resize;
+
+                    childprocess.exec('opencv/dist/resizing' + ' -i temp/' + data.fileToken + '_temp.jpg -o public/out/' + data.fileToken + '.jpg' + resizeParams, function (err, stdout, stderr) {
+                        if (err)
+                            throw err;
 
 
-                    client.emit('Img.Generate.Done', {filePath: 'out/' + data.fileToken + '.jpg'});
+                        client.emit('Img.Generate.Done', {filePath: 'out/' + data.fileToken + '.jpg'});
 
-                    // });
-
+                    });
                 });
 
             }
@@ -52,3 +59,7 @@ module.exports = function (client) {
 
     });
 };
+
+function isNumeric(n) {
+    return !isNaN(parseInt(n)) && isFinite(n);
+}
