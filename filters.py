@@ -94,7 +94,6 @@ args = parser.parse_args()
 print(args)
 
 image = cv2.imread(args.input)
-cv2.imshow("Original", image)
 
 if args.pencil:
     image = pencil(image)
@@ -116,6 +115,3 @@ if args.thermic:
 
 if args.output is not None:
     cv2.imwrite(args.output, image)
-
-cv2.imshow("Image", image)
-cv2.waitKey(0)

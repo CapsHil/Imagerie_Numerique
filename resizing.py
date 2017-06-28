@@ -39,12 +39,3 @@ if args.resize != None:
 
 if args.output != None:
     cv2.imwrite(args.output, image)
-
-# print(image.shape)
-
-cv2.imshow("Image", image)
-# image = crop(image, 375, 375)
-# cv2.imshow("Cropped Image", image)
-# image = resize(image, 500)
-# cv2.imshow("Resized Image", image)
-cv2.waitKey(0)
