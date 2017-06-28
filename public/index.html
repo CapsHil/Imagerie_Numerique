@@ -1,0 +1,186 @@
+<html>
+<body>
+<div id="uploadBox">
+    <div class="titre">
+        <h1>Imagerie Num&eacute;rique</h1>
+        <h2>Pierre RABY</h2>
+        <h2>Bastien NICOLAS</h2>
+        <h3>4A CFA</h3>
+    </div>
+    <br />
+    <br />
+    <span id='uploadArea'>
+        <label for="fileBox" style="font-family: Helvetica;">Choisir un fichier : </label><input type="file" id="fileBox" style="font-family: Helvetica;">
+        <br><br>
+        <table id=table-1>
+            <tr>
+                <td><label for="y" style="font-family: Helvetica;">Rogner horizontalement : </label></td>
+                <td><input type="number" id="y"></td>
+            </tr>
+            <tr>
+                <td><label for="x" style="font-family: Helvetica;">Rogner verticalement :  </label></td>
+                <td><input type="number" id="x"></td>
+            </tr>
+            <tr height="20">
+            </tr>
+            <tr>
+                <td><label for="resize" style="font-family: Helvetica;">Redimentionner par la hauteur : </label></td>
+                <td><input type="number" id="resize"></td>
+            </tr>
+        </table>
+        <br />
+        <table id="table-2">
+            <tr>
+                <td><label for="pencil" style="font-family: Helvetica;">Pencil : </label></td>
+                <td><input type="radio" id="pencil" name="filters"></td>
+            </tr>
+            <tr>
+                <td><label for="cartoon" style="font-family: Helvetica;">Cartoon : </label></td>
+                <td><input type="radio" id="cartoon" name="filters"></td>
+            </tr>
+            <tr>
+                <td><label for="darker" style="font-family: Helvetica;">Darker : </label></td>
+                <td><input type="radio" id="darker" name="filters"></td>
+            </tr>
+            <tr>
+                <td><label for="sepia" style="font-family: Helvetica;">Sepia : </label></td>
+                <td><input type="radio" id="sepia" name="filters"></td>
+            </tr>
+            <tr>
+                <td><label for="gray" style="font-family: Helvetica;">Gray : </label></td>
+                <td><input type="radio" id="gray" name="filters"></td>
+            </tr>
+            <tr>
+                <td><label for="thermic"style="font-family: Helvetica;">Thermic : </label></td>
+                <td><input type="radio" id="thermic" name="filters"></td>
+            </tr>
+        </table>
+        <br />
+        <button type='button' id='uploadButton' class='Button'>Generer l'image</button>
+    </span>
+</div>
+</body>
+</html>
+
+<script src="http://localhost:4200/socket.io/socket.io.js"></script>
+
+<script type="text/javascript">
+    window.addEventListener("load", ready);
+
+    function ready() {
+        if (window.File && window.FileReader) { //These are the relevant HTML5 objects that we are going to use
+            document.getElementById('uploadButton').addEventListener('click', startUpload);
+            document.getElementById('fileBox').addEventListener('change', fileChosen);
+        }
+        else {
+            document.getElementById('uploadArea').innerHTML = "Your browser doesn't support the file API please update your browser";
+        }
+    }
+
+    var selectedFile;
+    function fileChosen(evnt) {
+        selectedFile = evnt.target.files[0];
+    }
+
+    var socket = io.connect('http://localhost:4200');
+    var FReader;
+    var token;
+
+    var x;
+    var y;
+    var resize;
+    var pencil;
+    var cartoon;
+    var darker;
+    var sepia;
+    var gray;
+    var thermic;
+
+    function startUpload() {
+        if (document.getElementById('fileBox').value !== "") {
+
+            x = document.getElementById('x').value;
+            y = document.getElementById('y').value;
+            resize = document.getElementById('resize').value;
+            pencil = document.getElementById('pencil').checked;
+            cartoon = document.getElementById('cartoon').checked;
+            darker = document.getElementById('darker').checked;
+            sepia = document.getElementById('sepia').checked;
+            gray = document.getElementById('gray').checked;
+            thermic = document.getElementById('thermic').checked;
+
+            FReader = new FileReader();
+            var Content = '</div><span id="percent">0%</span>';
+            Content += "<span id='uploaded'> - <span id='MB'>0</span>/" + Math.round(selectedFile.size / 1048576) + "MB</span>";
+            document.getElementById('uploadArea').innerHTML = Content;
+
+            FReader.onload = function (evnt) {
+                socket.emit('Upload.Data', {token: token, data: evnt.target.result});
+            };
+            socket.emit('Upload.Start', {'size': selectedFile.size});
+
+            console.log('ok');
+        }
+        else {
+            alert("Please Select A File");
+        }
+    }
+
+    socket.on('Upload.RequestData', function (data) {
+        token = data['token'];
+        updateBar(data['cursor'] / selectedFile.size * 100);
+
+        var newFile;
+
+        newFile = selectedFile.slice(data['cursor'], data['cursor'] + data['blockSize']);
+        FReader.readAsBinaryString(newFile);
+    });
+
+    socket.on('Upload.Done', function (data) {
+        token = data['token'];
+        var fileToken = data['fileToken'];
+
+        updateBar(100);
+
+        socket.emit('Img.Generate.Start', {
+            fileToken: data['fileToken'],
+            x: x,
+            y: y,
+            resize: resize,
+            pencil: pencil,
+            cartoon: cartoon,
+            darker: darker,
+            sepia: sepia,
+            gray: gray,
+            thermic: thermic
+        });
+    });
+
+    socket.on('Img.Generate.Done', function (data) {
+        var Content = '<br><br><button href="'+ data.filePath+'">Télécharger l\'image générée</button>';
+        document.getElementById('uploadArea').innerHTML += Content;
+    });
+
+    function updateBar(percent) {
+        document.getElementById('percent').innerHTML = (Math.round(percent * 100) / 100) + '%';
+        var mbDone = Math.round(((percent / 100.0) * selectedFile.size) / 1048576);
+        document.getElementById('MB').innerHTML = mbDone;
+    }
+
+
+</script>
+
+<style>
+    .titre {width: 100%;}
+    .titre h1 {text-align: center; font-family: Helvetica;}
+    .titre h2 {font-family: Helvetica; margin: 0; text-align: center;}
+    .titre h3 {font-family: Helvetica; margin: 0; text-align: center;}
+    #uploadBox {margin-left:10%; margin-right:10%;border: 1px;}
+    #y {width: 150px; height: 30px; margin-bottom: 15px;}
+    #x {width: 150px; height: 30px; margin-bottom: 15px; }
+    #resize {width: 150px; height: 30px; margin-bottom: 15px;}
+    #table-1 {width: 400px;}
+    #table-2 {width: 200px;}
+    #uploadButton {width: 100%; height: 50px;}
+    .download {width: 200px; height: 75px; margin: 0 auto; background: red;}
+</style>

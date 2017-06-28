@@ -1,3 +1,9 @@
 .idea
 build/
 *.spec
+
+node_modules
+temp/*
+!temp/
+public/out/*
+!public/out/

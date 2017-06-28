@@ -12,3 +12,10 @@ Exemple : `./resize -i ./img/oklm.jpg -o ./img/oklm_cropped.jpg --crop=280:300`
 Exemple : `./filters -i ./img/oklm.jpg -o ./img/oklm_sepia.jpg --sepia`
 
 
+To run the nodejs server :
+
+`npm install`
+`npm install -g nodemon`
+`npm start`
+
+In your browser, go to `http://localhost:4200`
